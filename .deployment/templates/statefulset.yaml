@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: fl-client
+  namespace: vmware-rapps
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: fl-client
+  template:
+    metadata:
+      labels:
+        app: fl-client
+    spec:
+      containers:
+        - name: fl-client
+          image: hoangtuansu/oran:fl_client
+  serviceName: fl-client
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: fl-server
+  namespace: vmware-rapps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fl-server
+  template:
+    metadata:
+      labels:
+        app: fl-server
+    spec:
+      containers:
+        - name: fl-server
+          image: hoangtuansu/oran:fl_server
+  serviceName: fl-server
