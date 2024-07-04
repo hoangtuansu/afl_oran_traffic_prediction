@@ -13,9 +13,19 @@ spec:
       labels:
         app: fl-client
     spec:
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: pvc-fl-dataset
       containers:
         - name: fl-client
-          image: hoangtuansu/oran:fl_client
+          image: hoangtuansu/rapp_tp:0.1
+          env:
+            - name: FL_ROLE
+              value: client
+          volumeMounts:
+            - name: data
+              mountPath: /opt/oran/datasets
   serviceName: fl-client
 ---
 apiVersion: apps/v1
@@ -33,7 +43,17 @@ spec:
       labels:
         app: fl-server
     spec:
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: pvc-fl-dataset
       containers:
         - name: fl-server
-          image: hoangtuansu/oran:fl_server
+          image: hoangtuansu/rapp_tp:0.1
+          env:
+            - name: FL_ROLE
+              value: server
+          volumeMounts:
+            - name: data
+              mountPath: /opt/oran/datasets
   serviceName: fl-server
