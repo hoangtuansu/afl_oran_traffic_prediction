@@ -1,6 +1,7 @@
 import socket
 import time
 
+import tensorflow as tf
 import numpy as np
 
 from control_algorithm.adaptive_tau import ControlAlgAdaptiveTauServer
@@ -14,6 +15,7 @@ from config import *
 
 model = get_model(model_name)
 if hasattr(model, 'create_graph'):
+    tf.compat.v1.disable_eager_execution()
     model.create_graph(learning_rate=step_size)
 
 if time_gen is not None:

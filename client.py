@@ -2,6 +2,7 @@ import socket
 import time
 import struct
 
+import tensorflow as tf
 from control_algorithm.adaptive_tau import ControlAlgAdaptiveTauClient, ControlAlgAdaptiveTauServer
 from data_reader.data_reader import get_data, get_data_train_samples
 from models.get_model import get_model
@@ -42,6 +43,7 @@ try:
         model2 = get_model(model_name)   # Used for computing loss_w_prev_min_loss for stochastic gradient descent,
                                          # so that the state of model can be still used by control algorithm later.
 
+        tf.compat.v1.disable_eager_execution()
         if hasattr(model, 'create_graph'):
             model.create_graph(learning_rate=step_size)
         if hasattr(model2, 'create_graph'):
