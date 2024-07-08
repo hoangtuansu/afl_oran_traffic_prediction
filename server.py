@@ -1,5 +1,6 @@
 import socket
 import time
+import logging
 
 import tensorflow as tf
 import numpy as np
@@ -38,10 +39,10 @@ client_sock_all=[]
 # Establish connections to each client, up to n_nodes clients
 while len(client_sock_all) < n_nodes:
     listening_sock.listen(5)
-    print("Waiting for incoming connections...")
+    logging.info("Waiting for incoming connections...")
     (client_sock, (ip, port)) = listening_sock.accept()
-    print('Got connection from ', (ip,port))
-    print(client_sock)
+    logging.info('Got connection from ', (ip,port))
+    logging.info(client_sock)
 
     client_sock_all.append(client_sock)
 
@@ -97,13 +98,13 @@ for sim in sim_runs:
                        use_min_loss, sim]
                 send_msg(client_sock_all[n], msg)
 
-            print('All clients connected')
+            logging.info('All clients connected')
 
             # Wait until all clients complete data preparation and sends a message back to the server
             for n in range(0, n_nodes):
                 recv_msg(client_sock_all[n], 'MSG_DATA_PREP_FINISHED_CLIENT_TO_SERVER')
 
-            print('Start learning')
+            logging.info('Start learning')
 
             time_global_aggregation_all = None
 
@@ -121,9 +122,9 @@ for sim in sim_runs:
             # Loop for multiple rounds of local iterations + global aggregation
             while True:
 
-                print('---------------------------------------------------------------------------')
+                logging.info('---------------------------------------------------------------------------')
 
-                print('current tau config:', tau_config)
+                logging.info('current tau config:', tau_config)
 
                 time_total_all_start = time.time()
 
@@ -133,7 +134,7 @@ for sim in sim_runs:
 
                 w_global_prev = w_global
 
-                print('Waiting for local iteration at client')
+                logging.info('Waiting for local iteration at client')
 
                 w_global = np.zeros(dim_w)
                 loss_last_global = 0.0
@@ -170,7 +171,7 @@ for sim in sim_runs:
                 w_global /= data_size_total
 
                 if True in np.isnan(w_global):
-                    print('*** w_global is NaN, using previous value')
+                    logging.info('*** w_global is NaN, using previous value')
                     w_global = w_global_prev   # If current w_global contains NaN value, use previous w_global
                     use_w_global_prev_due_to_nan = True
                 else:
@@ -190,8 +191,8 @@ for sim in sim_runs:
                     else:
                         prev_loss_is_min = False
 
-                    print("Loss of previous global value: " + str(loss_last_global))
-                    print("Minimum loss: " + str(loss_min))
+                    logging.info("Loss of previous global value: " + str(loss_last_global))
+                    logging.info("Minimum loss: " + str(loss_min))
 
                 # If use_w_global_prev_due_to_nan, then use tau = 1 for next round
                 if not use_w_global_prev_due_to_nan:
@@ -216,8 +217,8 @@ for sim in sim_runs:
                 time_total_all = time_total_all_end - time_total_all_start
                 time_global_aggregation_all = max(0.0, time_total_all - time_all_local_all)
 
-                print('Time for one local iteration:', time_all_local_all / tau_actual)
-                print('Time for global averaging:', time_global_aggregation_all)
+                logging.info('Time for one local iteration:', time_all_local_all / tau_actual)
+                logging.info('Time for global averaging:', time_global_aggregation_all)
 
                 if use_fixed_averaging_slots:
                     if isinstance(time_gen, (list,)):
