@@ -62,7 +62,7 @@ class ModelCNNAbstract(abc.ABC):
             tmp = 1
             l = weight.get_shape()
             for i in range(0, len(l)):
-                tmp *= l[i].value
+                tmp *= l[i]
 
             dim += tmp
 
@@ -99,7 +99,7 @@ class ModelCNNAbstract(abc.ABC):
             tmp = 1
             l = weight.get_shape()
             for i in range(0, len(l)):
-                tmp *= l[i].value
+                tmp *= l[i]
 
             weight_var = np.reshape(w[start_index : start_index+tmp], l)
             sess.run(self.all_assignment_operations[k], feed_dict={self.all_assignment_placeholders[k]: weight_var})

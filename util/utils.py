@@ -1,6 +1,18 @@
 import numpy as np
+import os
 import pickle, struct, socket, math
 import logging
+
+# get TF logger
+logger = logging.getLogger('tensorflow')
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter('[%(asctime)s] %(levelname)s {%(filename)s:%(lineno)d} - %(message)s','%Y-%m-%d:%H:%M:%S')
+
+# create file handler which logs even debug messages
+fh = logging.FileHandler(f'{os.getenv("FL_ROLE")}.log')
+fh.setLevel(logging.INFO)
+fh.setFormatter(formatter)
+logger.addHandler(fh)
 
 def get_even_odd_from_one_hot_label(label):
     for i in range(0, len(label)):
