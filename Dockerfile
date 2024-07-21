@@ -1,4 +1,4 @@
-FROM python:3.9-slim-bookworm
+FROM python:3.12-slim-bookworm
 ENV FL_ROLE=client
 ENV CONFIG_PATH=/opt/oran/config.ini
 RUN mkdir -p /opt/oran
