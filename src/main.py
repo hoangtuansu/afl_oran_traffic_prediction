@@ -1,49 +1,34 @@
-# ==================================================================================
-#  Copyright (c) 2020 HCL Technologies Limited.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-# ==================================================================================
 
+# !!!!! We must set this environment variable before importing asyncio !!!!!
+import os
+from dataset import Dataset
+import tempfile
+from typing import Dict
+from constants import COUNTER_NAMES, SERVICE_NAME
+
+os.environ["PROMETHEUS_MULTIPROC_DIR"] = tempfile.mkdtemp(prefix=str(os.getpid()))
+
+# we must set_start_method before import asyncio to get data processing to
+# work on a mac. This code will _not_ work on Windows.
+import multiprocessing  # noqa: E402
+
+multiprocessing.set_start_method("fork")
+
+import asyncio  # noqa: E402
 import json
 import os
 import time
 import pandas as pd
 import schedule
-from ricxappframe.xapp_frame import Xapp, rmr
-from ricxappframe.xapp_sdl import SDLWrapper
-from mdclogpy import Logger
 from ad_model import modelling, CAUSE
 from ad_train import ModelTraining
-from database import DATABASE
+from dataset import Dataset
+from utils import logger
+from pmconsumer import PmHistoryConsumer
 
 db = None
 cp = None
 threshold = None
-sdl = SDLWrapper(use_fake_sdl=True)
-
-logger = Logger(name=__name__)
-
-
-def entry(self):
-    """  If ML model is not present in the path, It will trigger training module to train the model.
-      Calls predict function every 10 millisecond(for now as we are using simulated data).
-    """
-    connectdb()
-    train_model()
-    load_model()
-    schedule.every(0.5).seconds.do(predict, self)
-    while True:
-        schedule.run_pending()
 
 
 def load_model():
@@ -56,17 +41,13 @@ def load_model():
     logger.info("throughput threshold parameter is set as {}% (default)".format(threshold))
 
 
-def train_model():
-    if not os.path.isfile('/opt/ad/src/model'):
-        mt = ModelTraining(db)
+def train_model(ds):
+    if not os.path.isfile('/opt/oran/src/model'):
+        mt = ModelTraining(ds)
         mt.train()
 
 
 def predict(self):
-    """Read the latest ue sample from influxDB and detects if that is anomalous or normal..
-      Send the UEID, DUID, Degradation type and timestamp for the anomalous samples to Traffic Steering (rmr with the message type as 30003)
-      Get the acknowledgement of sent message from the traffic steering.
-    """
     db.read_data()
     val = None
     if db.data is not None:
@@ -84,18 +65,6 @@ def predict(self):
 
 
 def predict_anomaly(self, df):
-    """ calls ad_predict to detect if given sample is normal or anomalous
-    find out the degradation type if sample is anomalous
-    write given sample along with predicted label to AD measurement
-
-    Parameter
-    ........
-    ue: array or dataframe
-
-    Return
-    ......
-    val: anomalus sample info(UEID, DUID, TimeStamp, Degradation type)
-    """
     df['Anomaly'] = md.predict(df)
     df.loc[:, 'Degradation'] = ''
     val = None
@@ -118,84 +87,20 @@ def predict_anomaly(self, df):
 
 
 def msg_to_ts(self, val):
-    # send message from ad to ts
-    logger.debug("Sending Anomalous UE to TS")
-    success = self.rmr_send(val, 30003)
-    if success:
-        logger.info(" Message to TS: message sent Successfully")
-        # rmr receive to get the acknowledgement message from the traffic steering.
-
-    for summary, sbuf in self.rmr_get_messages():
-        if sbuf.contents.mtype == 30004:
-            logger.info("Received acknowldgement from TS (TS_ANOMALY_ACK): {}".format(summary))
-        if sbuf.contents.mtype == 20010:
-            a1_request_handler(self, summary, sbuf)
-        self.rmr_free(sbuf)
+    logger.debug("Detecting Anomalous UE")
 
 
-def connectdb(thread=False):
-    # Create a connection to InfluxDB if thread=True, otherwise it will create a dummy data instance
-    global db
-    db = DATABASE()
-    success = False
-    while not success:
-        success = db.connect()
+async def main(self):
+    pmhistory = PmHistoryConsumer(logger)
+    await pmhistory.new_rapp_session()
 
-
-def a1_request_handler(self, summary, sbuf):
-    logger.info("A1 policy received")
-    try:
-        req = json.loads(summary[rmr.RMR_MS_PAYLOAD])  # input should be a json encoded as bytes
-        logger.debug("A1PolicyHandler.resp_handler:: Handler processing request")
-    except (json.decoder.JSONDecodeError, KeyError):
-        logger.error("A1PolicyManager.resp_handler:: Handler failed to parse request")
-        return
-
-    if verifyPolicy(req):
-        logger.info("A1PolicyHandler.resp_handler:: Handler processed request: {}".format(req))
-    else:
-        logger.error("A1PolicyHandler.resp_handler:: Request verification failed: {}".format(req))
-    logger.debug("A1PolicyHandler.resp_handler:: Request verification success: {}".format(req))
-    change_threshold(self, req)
-    resp = buildPolicyResp(self, req)
-    self.rmr_send(json.dumps(resp).encode(), 20011)
-    logger.info("A1PolicyHandler.resp_handler:: Response sent: {}".format(resp))
-    self.rmr_free(sbuf)
-
-
-def change_threshold(self, req: dict):
-    if req["operation"] == "CREATE":
-        payload = req["payload"]
-        threshold = json.loads(payload)[db.a1_param]
-        logger.info("throughput threshold parameter updated to: {}% ".format(threshold))
-
-
-def verifyPolicy(req: dict):
-    for i in ["policy_type_id", "operation", "policy_instance_id"]:
-        if i not in req:
-            return False
-    return True
-
-
-def buildPolicyResp(self, req: dict):
-    req["handler_id"] = "ad"
-    del req["operation"]
-    del req["payload"]
-    req["status"] = "OK"
-    return req
-
-
-def start(thread=False):
-    try:
-        # Initiates xapp api and runs the entry() using xapp.run()
-        xapp = Xapp(entrypoint=entry, rmr_port=4560, use_fake_sdl=False)
-        logger.debug("AD xApp starting")
-        xapp.run()
-    except Exception as e:
-        logger.exception(e)
-    finally:
-        xapp.stop()
+    dataset = Dataset()
+    train_model(dataset)
+    load_model()
+    schedule.every(0.5).seconds.do(predict, self)
+    while True:
+        schedule.run_pending()
 
 
 if __name__ == "__main__":
-    start()
+    asyncio.run(main())

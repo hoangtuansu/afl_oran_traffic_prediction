@@ -1,29 +1,13 @@
-# ==================================================================================
-#  Copyright (c) 2020 HCL Technologies Limited.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-# ==================================================================================
-
 import joblib
 import time
 import numpy as np
+import pandas as pd
+from dataset import Dataset
 from processing import PREPROCESS
 from sklearn.metrics import classification_report, f1_score
 from sklearn.ensemble import IsolationForest
 from sklearn.model_selection import RandomizedSearchCV
-from mdclogpy import Logger
-
-logger = Logger(name=__name__)
+from utils import logger
 
 
 class ModelTraining(object):
@@ -43,31 +27,28 @@ class ModelTraining(object):
     X: DataFrame or array
         transformed values of input data
     """
-    def __init__(self, db):
-        self.db = db
+    def __init__(self, ds):
+        self.dataset : Dataset = ds
         self.train_data = None
         self.test_data = None
         self.read_train()
         self.read_test()
 
     def read_train(self):
-        self.db.read_data(train=True)
-        while self.db.data is None or len(self.db.data.dropna()) < 1000:
-            logger.warning("Check if InfluxDB instance is up / Not sufficient data for Training")
+        while self.dataset.data is None or\
+              len(self.dataset.data) < 1000:
+            logger.warning("Not sufficient data for Training. Sleep 120 seconds before checking data again.")
             time.sleep(120)
-            self.db.read_data(train=True)
-        self.train_data = self.db.data
-        logger.debug("Training on {} Samples".format(self.train_data.shape[0]))
+        self.train_data = pd.DataFrame(self.dataset.data)
+        logger.debug(f"Training on {len(self.train_data)} samples")
 
     def read_test(self):
         """ Read test dataset for model validation"""
-        self.db.read_data(valid=True)
-        while self.db.data is None or len(self.db.data.dropna()) < 300:
+        while self.dataset.data is None or len(self.dataset.data) < 300:
             logger.warning("Check if InfluxDB instance is up? or Not sufficient data for Validation in last 10 minutes")
             time.sleep(60)
-            self.db.read_data(valid=True)
-        self.test_data = self.db.data.dropna()
-        logger.debug("Validation on {} Samples".format(self.test_data.shape[0]))
+        self.test_data = pd.DataFrame(self.dataset.data)
+        logger.debug(f"Validation on {len(self.test_data)} Samples")
 
     def isoforest(self, outliers_fraction=0.05, random_state=4):
         """ Train isolation forest
@@ -110,7 +91,7 @@ class ModelTraining(object):
         self.train_data = ps.data
 
         self.actual = (self.test_data[self.db.anomaly] > 0).astype(int)
-        num = joblib.load('/opt/ad/src/num_params')
+        num = joblib.load('/opt/oran/src/num_params')
         ps = PREPROCESS(self.test_data[num])
         ps.transform()
         self.test_data = ps.data
@@ -124,6 +105,6 @@ class ModelTraining(object):
         models.append(model)
 
         opt = scores.index(max(scores))
-        joblib.dump(models[opt], '/opt/ad/src/model')
+        joblib.dump(models[opt], '/opt/oran/src/model')
         logger.info("Optimum f-score : {}".format(scores[opt]))
         logger.info("Training Ends : ")

@@ -1,19 +1,3 @@
-# ==================================================================================
-#  Copyright (c) 2020 HCL Technologies Limited.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-# ==================================================================================
-
 import pandas as pd
 import numpy as np
 import joblib
@@ -72,14 +56,14 @@ class PREPROCESS(object):
     def fit_transform(self):
         """ use normalizer transformation to bring all parameters in same scale """
         scale = Normalizer().fit(self.data)
-        joblib.dump(scale, '/opt/ad/src/scale')
+        joblib.dump(scale, '/opt/oran/src/scale')
 
     def transform(self):
-        scale = joblib.load('/opt/ad/src/scale')
+        scale = joblib.load('/opt/oran/src/scale')
         self.data = pd.DataFrame(scale.transform(self.data), columns=self.data.columns)
 
     def save_cols(self):
-        joblib.dump(self.data.columns, '/opt/ad/src/num_params')
+        joblib.dump(self.data.columns, '/opt/oran/src/num_params')
 
     def process(self):
         """

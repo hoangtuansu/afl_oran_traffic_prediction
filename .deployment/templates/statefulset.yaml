@@ -17,6 +17,9 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: pvc-fl-dataset
+        - name: rapp-config
+          configMap:
+            name: fl-config
       containers:
         - name: fl-client
           image: hoangtuansu/rapp_tp:0.1
@@ -26,6 +29,9 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /opt/oran/datasets
+            - name: rapp-config
+              subPath: config.ini
+              mountPath: /opt/oran/config.ini
   serviceName: fl-client
 ---
 apiVersion: apps/v1
@@ -47,6 +53,9 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: pvc-fl-dataset
+        - name: rapp-config
+          configMap:
+            name: fl-config
       containers:
         - name: fl-server
           image: hoangtuansu/rapp_tp:0.1
@@ -56,4 +65,7 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /opt/oran/datasets
+            - name: rapp-config
+              subPath: config.ini
+              mountPath: /opt/oran/config.ini
   serviceName: fl-server

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  creationTimestamp: 2022-02-18T18:52:05Z
+  name: fl-config
+  namespace: vmware-rapps
+data:
+  config.ini: |
+    [features]
+    thpt = DRB.UEThpDl
+    rsrp = RF.serving.RSRP
+    rsrq = RF.serving.RSRQ
+    rssinr  = RF.serving.RSSINR
+    prb_usage = RRU.PrbUsedDl
+    ue = ue-id
+    anomaly = Viavi.UE.anomalies
+    a1_param = thp_threshold
