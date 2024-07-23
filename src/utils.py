@@ -1,7 +1,7 @@
 import os
 import logging
 from constants import SERVICE_NAME
-
+from rapplib import rapp
 
 logger = logging.getLogger(SERVICE_NAME)
 logger.setLevel(logging.INFO)
@@ -12,3 +12,6 @@ fh = logging.FileHandler(f'{os.getenv("FL_ROLE")}.log')
 fh.setLevel(logging.INFO)
 fh.setFormatter(formatter)
 logger.addHandler(fh)
+
+
+logger = rapp.configure_default_logging(SERVICE_NAME)

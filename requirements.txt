@@ -1,6 +1,7 @@
 tensorflow
 matplotlib
 numpy
+schedule
 fastapi
 fastapi-utils
 glog
