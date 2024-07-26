@@ -19,9 +19,7 @@ COUNTER_NAMES = [
     "rssinr_nb3", 
     "rsrp_nb4", 
     "rsrq_nb4", 
-    "rssinr_nb4", 
-    "Viavi.UE.anomalies", 
-    "ue-id"
+    "rssinr_nb4"
 ]
 
 
