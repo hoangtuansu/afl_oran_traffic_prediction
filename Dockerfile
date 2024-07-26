@@ -10,4 +10,4 @@ RUN python3 -m pip install -r requirements.txt
 COPY ./src/config.ini /opt/oran/
 COPY ./src/*.py /opt/oran/src/
 
-CMD python3 /opt/oran/main.py
+CMD python3 /opt/oran/src/main.py

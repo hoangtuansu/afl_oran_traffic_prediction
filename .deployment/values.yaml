@@ -2,15 +2,15 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-imageName: hoangtuansu/rapp_tp
-namespace: vmware-rapps
+imageName: hoangtuansu/rapp_tp:0.3
+namespace: ets-admin
 cells:
   client1: '1001'
-  client2: '1002'
-  client3: '1003'
-  client4: '1004'
-  client5: '1005'
-  client6: '1006'
-  client9: '1009'
-  client10: '1010'
-  client13: '10013'
+#  client2: '1002'
+#  client3: '1003'
+#  client4: '1004'
+#  client5: '1005'
+#  client6: '1006'
+#  client9: '1009'
+#  client10: '1010'
+#  client13: '10013'
