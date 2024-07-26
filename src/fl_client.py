@@ -9,9 +9,7 @@ from torch.utils.data import DataLoader, Dataset
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import OneHotEncoder
 from tqdm import tqdm
-from utils import logger
 import constants
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -67,25 +65,10 @@ def test(net, testloader):
     return total_loss / len(testloader.dataset), None
 
 
-def load_csv_data(cell_id):
+def load_csv_data(cell_ids):
     raw_df = pd.read_csv('training_set.csv')    
-    df = raw_df[raw_df['du-id'] == cell_id]
-    df.drop(columns=['measTimeStampRf'], inplace=True)
-
-    # Identify categorical columns (columns with dtype object)
-    categorical_columns = df.select_dtypes(include=['object']).columns.tolist()
-
-    # One-hot encode categorical columns
-    ohe = OneHotEncoder(sparse_output=False, drop='first')
-    ohe_features = ohe.fit_transform(df[categorical_columns])
-    ohe_feature_names = ohe.get_feature_names_out(categorical_columns)
-
-    # Create a new DataFrame with one-hot encoded features
-    ohe_df = pd.DataFrame(ohe_features, columns=ohe_feature_names)
-
-    # Drop original categorical columns and 'measTimeStampRf', then concatenate with the one-hot encoded features
-    df.drop(columns=categorical_columns, inplace=True)
-    df = pd.concat([df.reset_index(drop=True), ohe_df.reset_index(drop=True)], axis=1)
+    df = raw_df[raw_df['du-id'] in cell_ids]
+    df = df.drop(columns=constants.UNUSED_FEATURES, axis=1, errors='ignore')
 
     # Split dataset into train, validation, and test sets
     train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)

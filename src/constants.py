@@ -31,6 +31,16 @@ COUNTER_NAMES = [
 ]
 
 
+UNUSED_FEATURES = ['measTimeStampRf', 
+                    "nrCellIdentity", 
+                    "nbCellIdentity_0", 
+                    "nbCellIdentity_1", 
+                    "nbCellIdentity_2", 
+                    "nbCellIdentity_3", 
+                    "nbCellIdentity_4",
+                    "Viavi.UE.anomalies",
+                    "ue-id"]
+
 SERVICE_NAME = "pmhistory-consumer-python"
 
 BATCH_SIZE = 32

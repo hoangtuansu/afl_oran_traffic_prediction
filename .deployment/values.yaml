@@ -6,12 +6,6 @@ imageName: hoangtuansu/rapp_tp:0.3
 namespace: ets-admin
 bootstrap_url: http://10.180.113.114:8080
 cells:
-  client1: '1001'
-#  client2: '1002'
-#  client3: '1003'
-#  client4: '1004'
-#  client5: '1005'
-#  client6: '1006'
-#  client9: '1009'
-#  client10: '1010'
-#  client13: '10013'
+  client1: '1001,1002'
+  client2: '1003,1004,1005'
+  client3: '1006,1009,1010,10013'

@@ -225,7 +225,7 @@ class PmHistoryConsumer(rapp_base.RAppBase):
 
 
 def fl_handler():
-    trainloaders, testloader, input_dim = fl_client.load_csv_data(cell_id)
+    trainloaders, testloader, input_dim = fl_client.load_csv_data(cell_ids)
     flwc = fl_client.FlowerClient(trainloaders, testloader, input_dim).to_client()
 
     start_client(server_address=f'{aggregator_url}:51000', client=flwc)
@@ -237,7 +237,7 @@ def fl_handler():
 
 async def rapp_handler():
     pmhistory = PmHistoryConsumer(logger)
-    pmhistory.pmhistory_cell_ids = [cell_id]
+    pmhistory.pmhistory_cell_ids = cell_ids
     await pmhistory.new_rapp_session()
     logger.info('Started new RAPP session')
 
@@ -261,11 +261,13 @@ if __name__ == "__main__":
         logger.error('Environment variable MODE is missing. Exit.')
         sys.exit(1)
 
-    cell_id = os.getenv('CELL_ID')
+    cell_ids = os.getenv('CELL_IDS', []).split(',')
 
-    if cell_id is None and mode == "client":
-        logger.error('Environment variable CELL_ID is missing. Exit.')
+    if len(cell_ids) == 0 and mode == "client":
+        logger.error('Environment variable CELL_IDS is missing. Exit.')
         sys.exit(1)
+    
+    cell_ids = [int(c) for c in cell_ids]
 
     aggregator_url = os.getenv("AGGREGATOR_SVC")
 

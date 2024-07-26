@@ -24,7 +24,7 @@ spec:
               value: {{ $.Values.bootstrap_url }}
             - name: AGGREGATOR_SVC
               value: aggregator.{{ $.Values.namespace }}.svc
-            - name: CELL_ID
+            - name: CELL_IDS
               value: '{{ $val }}'
   serviceName: {{ $key }}
 ---
