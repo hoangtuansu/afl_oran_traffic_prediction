@@ -4,11 +4,13 @@ Implements the start code for pmhistory consumer.
 
 # !!!!! We must set this environment variable before importing asyncio !!!!!
 import os
-from dataset import Dataset
 import tempfile
 from typing import Dict
 from constants import COUNTER_NAMES, SERVICE_NAME
-
+import flwr as fl
+from flwr.client import start_client, FlowerClient
+import fl_client
+import sys
 os.environ["PROMETHEUS_MULTIPROC_DIR"] = tempfile.mkdtemp(prefix=str(os.getpid()))
 
 # we must set_start_method before import asyncio to get data processing to
@@ -208,7 +210,8 @@ class PmHistoryConsumer(rapp_base.RAppBase):
     service_version = "0.1.0"
     service_display_name = "PM Historical Python based Data Consumer"
     service_description = "Python rApp that consumes historical PM counter data"
-
+    job_frequency = 120
+    pm_data_window_start = 2
     pmhistory_counter_names = COUNTER_NAMES
 
     # Overridding data_processor
@@ -224,73 +227,54 @@ class PmHistoryConsumer(rapp_base.RAppBase):
         multiprocess_mode="max",
     )
 
-def load_model():
-    global md
-    global cp
-    global threshold
-    md = modelling()
-    cp = CAUSE()
-    threshold = 70
-    logger.info("throughput threshold parameter is set as {}% (default)".format(threshold))
 
+def fl_handler():
+    trainloaders, testloader, input_dim = fl_client.load_csv_data(cell_id)
+    flwc = FlowerClient(trainloaders, testloader, input_dim).to_client()
 
-def train_model(ds):
-    if not os.path.isfile('/opt/oran/src/model'):
-        mt = ModelTraining(ds)
-        mt.train()
-
-
-def predict():
-    db.read_data()
-    val = None
-    if db.data is not None:
-        if set(md.num).issubset(db.data.columns):
-            db.data = db.data.dropna(axis=0)
-            if len(db.data) > 0:
-                val = predict_anomaly(db.data)
-        else:
-            logger.warning("Parameters does not match with of training data")
-    else:
-        logger.warning("No data in last 1 second")
-        time.sleep(1)
-
-
-def predict_anomaly(df):
-    df['Anomaly'] = md.predict(df)
-    df.loc[:, 'Degradation'] = ''
-    val = None
-    if 1 in df.Anomaly.unique():
-        df.loc[:, ['Anomaly', 'Degradation']] = cp.cause(df, db, threshold)
-        df_a = df.loc[df['Anomaly'] == 1].copy()
-        if len(df_a) > 0:
-            df_a['time'] = df_a.index
-            cols = [db.ue, 'time', 'Degradation']
-            # rmr send 30003(TS_ANOMALY_UPDATE), should trigger registered callback
-            result = json.loads(df_a.loc[:, cols].to_json(orient='records'))
-            val = json.dumps(result).encode()
-    df.loc[:, 'RRU.PrbUsedDl'] = df['RRU.PrbUsedDl'].astype('float')
-    df['Viavi.UE.anomalies'] = df['Viavi.UE.anomalies'].astype('int64')
-    df['du-id'] = df['du-id'].astype('int64')
-
-    df.index = pd.date_range(start=df.index[0], periods=len(df), freq='1ms')
-    db.write_anomaly(df)
-    return val
-  
-async def fl_handler():
-    train_model(dataset)
-    load_model()
+    start_client(server_address=f'{aggregator_url}:51000', client=flwc)
+    '''
     schedule.every(0.5).seconds.do(predict)
     while True:
         schedule.run_pending()
+    '''
 
 async def rapp_handler():
     pmhistory = PmHistoryConsumer(logger)
+    pmhistory.pmhistory_cell_ids = [cell_id]
     await pmhistory.new_rapp_session()
     logger.info('Started new RAPP session')
-    
-async def chat() -> None:
-    await asyncio.gather(fl_handler(), rapp_handler())  
+
+def main():
+    if mode == "client":
+        import threading
+        thread1 = threading.Thread(target=fl_handler)
+        thread1.start()
+
+        asyncio.run(rapp_handler())
+    elif mode == "aggregator":
+        fl.server.start_server(server_address="0.0.0.0:51000",
+                               config=fl.server.ServerConfig(num_rounds=3), 
+                               strategy=fl.server.strategy.FedAvg(),)
 
 
 if __name__ == "__main__":
-    asyncio.get_event_loop().run_until_complete(chat())
+    cell_id = os.getenv('CELL_ID')
+
+    if cell_id is None:
+        logger.error('Environment variable CELL_ID is missing. Exit.')
+        sys.exit(1)
+
+    mode = os.getenv("ROLE")
+
+    if mode is None:
+        logger.error('Environment variable MODE is missing. Exit.')
+        sys.exit(1)
+
+    aggregator_url = os.getenv("AGGREGATOR_SVC")
+
+    if mode == "client" and aggregator_url is None:
+        logger.error('Environment variable AGGREGATOR_SVC is missing when running as client. Exit.')
+        sys.exit(1)
+
+    main()  

@@ -1,0 +1,29 @@
+{{- range $key, $val := .Values.cells }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $key }}
+  namespace: {{ $.Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $key }}
+  template:
+    metadata:
+      labels:
+        app: {{ $key }}
+    spec:
+      containers:
+        - name: {{ $key }}
+          image: '{{ $.Values.imageName }}'
+          env:
+            - name: ROLE
+              value: client
+            - name: AGGREGATOR_SVC
+              value: aggregator.{{ $.Values.namespace }}.svc
+            - name: CELL_IDs
+              value: '{{ $val }}'
+  serviceName: {{ $key }}
+---
+{{- end}}
