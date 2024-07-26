@@ -6,7 +6,6 @@ RUN apt update; apt install -y git vim curl;
 COPY requirements.txt /opt/oran/
 RUN python3 -m pip install -r requirements.txt
 
-COPY ./src/config.ini /opt/oran/
 COPY ./src/*.py /opt/oran/src/
 COPY ./src/rapplib/*.py /opt/oran/src/rapplib/
 
