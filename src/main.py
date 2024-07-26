@@ -8,7 +8,7 @@ import tempfile
 from typing import Dict
 from constants import COUNTER_NAMES, SERVICE_NAME
 import flwr as fl
-from flwr.client import start_client, FlowerClient
+from flwr.client import start_client
 import fl_client
 import sys
 os.environ["PROMETHEUS_MULTIPROC_DIR"] = tempfile.mkdtemp(prefix=str(os.getpid()))
@@ -230,7 +230,7 @@ class PmHistoryConsumer(rapp_base.RAppBase):
 
 def fl_handler():
     trainloaders, testloader, input_dim = fl_client.load_csv_data(cell_id)
-    flwc = FlowerClient(trainloaders, testloader, input_dim).to_client()
+    flwc = fl_client.FlowerClient(trainloaders, testloader, input_dim).to_client()
 
     start_client(server_address=f'{aggregator_url}:51000', client=flwc)
     '''
