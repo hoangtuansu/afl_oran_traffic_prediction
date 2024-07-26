@@ -14,6 +14,7 @@ signal.signal(signal.SIGINT, signal_handler)
 
 def main():
     df = pd.read_csv('pmhistory.csv', sep=',')
+    df = df.drop(["nrCellIdentity", "nbCellIdentity_0", "nbCellIdentity_1", "nbCellIdentity_2", "nbCellIdentity_3", "nbCellIdentity_4", "ue-id"], axis=1, errors='ignore')
     cells = df['CELL_GLOBAL_ID'].unique().tolist()
     try:
         start_datetime = datetime.now()

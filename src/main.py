@@ -31,10 +31,6 @@ from rapplib import (
 )  # noqa: E402
 import pandas as pd
 import schedule
-import json
-import time
-from ad_model import modelling, CAUSE
-from ad_train import ModelTraining
 from dataset import Dataset
 from utils import logger
 
