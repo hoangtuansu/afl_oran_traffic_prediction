@@ -1,7 +1,6 @@
 tensorflow
 matplotlib
 numpy
-<<<<<<< HEAD
 schedule
 fastapi
 fastapi-utils
@@ -21,5 +20,6 @@ pyproj
 scipy
 shapely
 aioresponses
-=======
->>>>>>> master
+flwr
+torch
+torchvision

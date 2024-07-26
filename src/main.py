@@ -259,16 +259,16 @@ def main():
 
 
 if __name__ == "__main__":
-    cell_id = os.getenv('CELL_ID')
-
-    if cell_id is None:
-        logger.error('Environment variable CELL_ID is missing. Exit.')
-        sys.exit(1)
-
     mode = os.getenv("ROLE")
 
     if mode is None:
         logger.error('Environment variable MODE is missing. Exit.')
+        sys.exit(1)
+
+    cell_id = os.getenv('CELL_ID')
+
+    if cell_id is None and mode == "client":
+        logger.error('Environment variable CELL_ID is missing. Exit.')
         sys.exit(1)
 
     aggregator_url = os.getenv("AGGREGATOR_SVC")
