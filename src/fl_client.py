@@ -67,7 +67,7 @@ def test(net, testloader):
 
 def load_csv_data(cell_ids):
     raw_df = pd.read_csv('training_set.csv')    
-    df = raw_df[raw_df['du-id'] in cell_ids]
+    df = raw_df[raw_df['du-id'].isin(cell_ids)]
     df = df.drop(columns=constants.UNUSED_FEATURES, axis=1, errors='ignore')
 
     # Split dataset into train, validation, and test sets

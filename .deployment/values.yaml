@@ -5,7 +5,13 @@
 imageName: hoangtuansu/rapp_tp:0.3
 namespace: ets-admin
 bootstrap_url: http://10.180.113.114:8080
-cells:
-  client1: '1001,1002'
-  client2: '1003,1004,1005'
-  client3: '1006,1009,1010,10013'
+clients:
+  - name: client1
+    cells: '1001,1002'
+    port: 32908
+  - name: client2
+    cells: '1003,1004,1005'
+    port: 32909
+  - name: client3
+    cells: '1006,1009,1010,10013'
+    port: 32910

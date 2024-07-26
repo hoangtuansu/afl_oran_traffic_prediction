@@ -295,6 +295,7 @@ class DataManager:
         self.service_map, err = rapp.bootstrap(
             self.config.custom_headers, self.config.metrics_counters
         )
+
         if err is not None:
             raise rapp.RappError("Failed to bootstrap: %s" % err)
         if "service" not in self.service_map:
@@ -351,6 +352,8 @@ class DataManager:
         # update the service map with platform services
         for name, href in platform_services.items():
             self.service_map[name] = href
+        
+        self.log.debug(f'Service URLs: {self.service_map}')
 
     def start_server(self):
         """
@@ -1096,8 +1099,12 @@ class DataManager:
             "status_notification_uri": self.get_job_status_callback_url(job_id),
         }
 
+        self.log.debug(f'Job registration request data: {job_registration}')
+
         # Send job registration request to DMS
         consumer_href = self.service_map[rapp.platform_service_for_consumer]
+        
+        self.log.debug(f'Platform service endpoint for consumer: {consumer_href}')
 
         _, err = await rapp_async.announce_consumer_job(
             consumer_href,

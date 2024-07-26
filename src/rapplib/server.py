@@ -495,9 +495,9 @@ class Server:
         if ":" in parsed_url.netloc:
             self.port: str = parsed_url.netloc.split(":")[1]
         elif parsed_url.scheme == "https":
-            self.port: str = "80"
-        else:
             self.port: str = "443"
+        else:
+            self.port: str = "80"
         # Host is always 0.0.0.0 because we always bind there.
         self.host = "0.0.0.0"
 

@@ -10,3 +10,21 @@ spec:
       targetPort: 51000
   selector:
     app: aggregator
+---
+{{- range $key := .Values.clients }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $key.name }}-svc
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+    - name: {{ $key.name }}-svc
+      protocol: TCP
+      port: 80
+      nodePort: {{ $key.port }}
+  selector:
+    app.kubernetes.io/name: {{ $key.name }}
+  type: NodePort
+---
+{{- end}}
