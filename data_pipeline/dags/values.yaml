@@ -1,0 +1,7 @@
+images:
+  airflow:
+    repository: hoangtuansu/ad_dag
+    tag: '0.2'                                 # airflow dags image version
+    pullPolicy: Always                             # change this to `Always` if changes applied on same tagged image.
+
+webserverSecretKey: 1efc9c509bd64f85cbdd04d03ea2d116

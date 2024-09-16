@@ -15,6 +15,7 @@ import torch.nn.functional as F
 import torchvision.transforms as transforms
 from torch.utils.data import Dataset, DataLoader
 from PIL import ExifTags
+from utils import logger
 
 
 import torch.optim as optim
@@ -85,7 +86,7 @@ def train(net, trainloaders, epochs: int, verbose=False):
                 running_loss += loss.item()
         running_loss /= len(trainloaders) * len(trainloader.dataset)
         if verbose:
-            print(f"Epoch {epoch+1}: train loss {running_loss}")
+            logger.info(f"Epoch {epoch+1}: train loss {running_loss}")
 
 def test(net, testloader):
     """Evaluate the network on the entire test set."""
@@ -117,4 +118,4 @@ def centrallized_training(trainloaders, testloader):
 
     # Test the model
     test_loss = test(net, testloader)
-    print(f"Test Loss: {test_loss}")
+    logger.info(f"Test Loss: {test_loss}")

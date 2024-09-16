@@ -1,0 +1,5 @@
+images:
+  airflow:
+    repository: hoangtuansu/training_pipeline:0.1
+    tag: 0.1.0                                 # airflow dags image version
+    pullPolicy: Always                             # change this to `Always` if changes applied on same tagged image.

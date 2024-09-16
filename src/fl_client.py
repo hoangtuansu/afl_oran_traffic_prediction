@@ -1,8 +1,9 @@
 import flwr as fl
+from flwr.client import NumPyClient, ClientApp, start_client
+import mlflow
 import torch
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
-from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import train_test_split
 import numpy as np
 import torch.nn as nn
@@ -10,8 +11,17 @@ import torch.nn.functional as F
 from collections import OrderedDict
 from typing import Dict, Tuple
 import constants
+from datetime import datetime
+import os
+import cords_semantics.tags as cords_tags
+
 
 DEVICE = torch.device("cpu")  # Try "cuda" to train on GPU
+experiment_name = "Federated-Learning-Traffic-Classification"
+run_name = datetime.now().strftime("%Y%m%d_%H%M%S")
+logdir = os.path.join("logs", experiment_name, run_name)
+
+mlflow.autolog()
 
 class Net(nn.Module):
     def __init__(self, input_size: int) -> None:
@@ -45,8 +55,6 @@ class CustomDataset(Dataset):
         return features, target
 
 
-
-
 def load_data(df):
     # Split dataset into train, validation, and test sets
     _, test_df = train_test_split(df, test_size=0.2, random_state=42)
@@ -76,7 +84,7 @@ def train(net, trainloader, epochs: int, verbose=False):
         if verbose:
             print(f"Epoch {epoch+1}: train loss {running_loss}")
 
-def test(net, testloader):
+def evaluate(net, testloader):
     """Evaluate the network on the entire test set."""
     criterion = torch.nn.MSELoss()
     total_loss = 0.0
@@ -90,11 +98,12 @@ def test(net, testloader):
     total_loss /= len(testloader.dataset)
     return total_loss
 
-class FlowerClient(fl.client.NumPyClient):
-    def __init__(self, trainloader, testloader):
+class FlowerClient(NumPyClient):
+    def __init__(self, trainloader, testloader, current_round):
         self.trainloader = trainloader
         self.testloader = testloader
         self.model = Net(input_size=next(iter(trainloader))[0].shape[1]).to(DEVICE)
+        self.current_round = current_round
 
     def get_parameters(self, config):
         return [val.cpu().numpy() for _, val in self.model.state_dict().items()]
@@ -102,18 +111,53 @@ class FlowerClient(fl.client.NumPyClient):
     def set_parameters(self, parameters):
         params_dict = zip(self.model.state_dict().keys(), parameters)
         state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
-        print(f'############{state_dict}')
         self.model.load_state_dict(state_dict, strict=True)
 
     def fit(self, parameters, config):
         self.set_parameters(parameters)
-        train(self.model, self.trainloader, epochs=1)
+
+        with mlflow.start_run(run_name=run_name) as mlflow_run:
+            train(self.model, self.trainloader, epochs=1)
+            loss = evaluate(self.model, self.testloader, self.criterion)
+            mlflow.set_tag(cords_tags.CORDS_RUN, mlflow_run.info.run_id)
+            mlflow.set_tag(cords_tags.CORDS_RUN_EXECUTES, "ANN")
+            mlflow.set_tag(cords_tags.CORDS_IMPLEMENTATION, "python")
+            mlflow.set_tag(cords_tags.CORDS_SOFTWARE, "pytorch")
+            mlflow.set_tag(cords_tags.CORDS_MODEL_HASHYPERPARAMETER, self.criterion)
+            mlflow.set_tag(cords_tags.CORDS_MODEL_HASHYPERPARAMETER, self.optimizer)
+            mlflow.log_metric("loss", loss)
+            mlflow.pytorch.log_model(self.model, f"Round_{self.current_round}_Client")
+
+        self.current_round += 1
         return self.get_parameters(config={}), len(self.trainloader.dataset), {}
 
 
     def evaluate(self, parameters, config) -> Tuple[float, int, Dict[str, float]]:
         self.set_parameters(parameters)
-        test_loss = test(self.model, self.testloader)
+        test_loss = evaluate(self.model, self.testloader)
         # Return a dictionary of metrics (optional), e.g., loss.
         metrics = {"loss": test_loss}
         return float(test_loss), len(self.testloader.dataset), metrics
+    
+
+
+trainloaders, testloader = load_data(pmhistory_data)
+
+
+def client_fn(current_round):
+    """Create and return an instance of Flower `Client`."""
+    return FlowerClient(trainloaders, testloader, current_round).to_client()
+
+
+app = ClientApp(
+    client_fn=client_fn,
+)
+
+# Legacy mode
+if __name__ == "__main__":
+    current_round = 0 
+    start_client(
+        server_address=f'{aggregator_url}:51000',
+        client=client_fn(current_round=current_round),
+    )
+

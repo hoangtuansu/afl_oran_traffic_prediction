@@ -1,0 +1,5 @@
+FROM apache/airflow:2.10.1
+
+#COPY ./src/ /opt/oran/
+USER airflow
+COPY --chown=airflow:root ./dags/ /opt/airflow/dags/

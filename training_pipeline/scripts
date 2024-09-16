@@ -1,0 +1,10 @@
+docker build . -t training_pipeline:0.1 && docker tag training_pipeline:0.1 hoangtuansu/training_pipeline:0.1 && docker push hoangtuansu/training_pipeline:0.1
+
+
+docker build --build-arg FL_ROLE=client -f Dockerfile_fl -t fl_client . && docker image tag fl_client:latest hoangtuansu/fl_client:0.1 &&  docker push hoangtuansu/fl_client:0.1
+
+
+docker build --build-arg FL_ROLE=server -f Dockerfile_fl -t fl_server . && docker image tag fl_server:latest hoangtuansu/fl_server:0.1 &&  docker push hoangtuansu/fl_server:0.1
+
+
+helm upgrade airflow apache-airflow/airflow --namespace taisp-ml-infra --set images.airflow.repository=hoangtuansu/training_pipeline --set images.airflow.tag=0.1 --set images.airflow.pullPolicy=Always

@@ -1,0 +1,7 @@
+influxdb
+requests
+numpy
+pandas
+mlflow
+scikit-learn
+joblib

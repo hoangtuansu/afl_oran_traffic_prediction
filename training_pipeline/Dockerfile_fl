@@ -1,0 +1,29 @@
+FROM python:3.12-slim-bookworm as build
+RUN apt update; apt install -y git vim curl;
+WORKDIR /opt
+RUN curl -sSL https://install.python-poetry.org | python3 -
+RUN git clone https://github.com/nimbus-gateway/cords-semantics-lib.git
+RUN cd cords-semantics-lib && /root/.local/bin/poetry build
+#--------
+FROM python:3.12-slim-bookworm
+ARG FL_ROLE
+ENV FL_ROLE=${FL_ROLE}
+ENV MLFLOW_TRACKING_URI=http://10.180.113.115:32256
+ENV MLFLOW_TRACKING_USERNAME=user
+ENV MLFLOW_TRACKING_PASSWORD=sr9TvkIjaj
+
+RUN apt update
+RUN mkdir -p /opt/oran /opt/cords-semantics-lib/dist/
+
+COPY --from=build /opt/cords-semantics-lib/dist/ /opt/cords-semantics-lib/dist/
+RUN cd /opt/cords-semantics-lib/dist && pip install cords_semantics-0.2.1-py3-none-any.whl
+
+WORKDIR /opt/oran
+COPY requirements.txt /opt/oran/
+RUN python3 -m pip install -r requirements.txt
+
+COPY ./src/${FL_ROLE}.py /opt/oran/main.py
+
+RUN apt install -y git vim curl
+
+CMD python3 /opt/oran/main.py
