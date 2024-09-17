@@ -5,25 +5,21 @@ services:
       context: .
       dockerfile: src.Dockerfile
     image: hoangtuansu/ingester:${COMPONENT_IMAGE_VERSION}
-    command: python ingest_data.py
   cleaner:
     build:
       context: .
       dockerfile: src.Dockerfile
     image: hoangtuansu/cleaner:${COMPONENT_IMAGE_VERSION}
-    command: python clean_data.py
   trainer:
     build:
       context: .
       dockerfile: src.Dockerfile
     image: hoangtuansu/trainer:${COMPONENT_IMAGE_VERSION}
-    command: python model_train.py
   evaluator:
     build:
       context: .
       dockerfile: src.Dockerfile
     image: hoangtuansu/evaluator:${COMPONENT_IMAGE_VERSION}
-    command: python evaluation.py
   dagger:
     build:
       context: .
