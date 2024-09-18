@@ -50,6 +50,7 @@ def main():
     #ingester.dropmeas(table)
     df_sample = df.sample(frac=0.3)
     #ingester.publish_db(df_sample, table)
+    time.sleep(20)
         
 
 if __name__ == "__main__":
