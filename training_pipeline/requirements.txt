@@ -1,8 +1,0 @@
-matplotlib
-numpy
-pandas
-flwr
-torch
-torchvision
-tqdm
-mlflow

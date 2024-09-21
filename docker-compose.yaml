@@ -1,0 +1,30 @@
+version: '3'
+services:
+  ingester:
+    build:
+      context: .
+      dockerfile: src.Dockerfile
+    image: hoangtuansu/ingester:${COMPONENT_IMAGE_VERSION}
+  cleaner:
+    build:
+      context: .
+      dockerfile: src.Dockerfile
+    image: hoangtuansu/cleaner:${COMPONENT_IMAGE_VERSION}
+  trainer:
+    build:
+      context: .
+      dockerfile: src.Dockerfile
+    image: hoangtuansu/trainer:${COMPONENT_IMAGE_VERSION}
+  evaluator:
+    build:
+      context: .
+      dockerfile: src.Dockerfile
+    image: hoangtuansu/evaluator:${COMPONENT_IMAGE_VERSION}
+  dagger:
+    build:
+      context: .
+      dockerfile: dags.Dockerfile
+      args:
+        - COMPONENT_IMAGE_VERSION=${COMPONENT_IMAGE_VERSION}
+    image: hoangtuansu/ad_dag:${DAG_IMAGE_VERSION}
+
